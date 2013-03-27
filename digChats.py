@@ -1,3 +1,7 @@
+# This is simple program to Download, parse/iterate over all chat
+# conversation I had on gtalk, based on this stackoverflow
+# conversation
+# http://stackoverflow.com/questions/8146970/accessing-chat-folder-in-python-using-imaplib
 import email
 import getpass, imaplib
 import os
@@ -48,7 +52,6 @@ def numOfPeoplePerDay():
     # plot(sortedArray[:,0], sortedArray[:,1], 'o')
     plot(dateArray[:,0], dateArray[:,1], 'o')
     savefig('chatNumbers.pdf')
-    # return dateArray
 
 def digLinks(emailId):
     # Iterating over all chat logs for extracting links.
