@@ -17,7 +17,9 @@ def extract_body(payload):
 def sortInt(a, b):
     return cmp(int(a), int(b))
 
-def numOfPeoplePerDay():
+def numOfPeoplePerDay(userName):
+    # parsing all chat conversations to get number of different users
+    # vs per day plot.
     from dateutil import parser
     import datetime
     from pylab import plot, savefig, array, sort
@@ -34,13 +36,13 @@ def numOfPeoplePerDay():
             continue
         # print dt
         if dt in dateDict:
-            if msg['To'] not in dateDict[dt] and 'choudhary.shantanu' not in msg['To']:
+            if msg['To'] not in dateDict[dt] and userName not in msg['To']:
                 dateDict[dt].append(msg['To'])
-            elif msg['From'] not in dateDict[dt] and 'choudhary.shantanu' not in msg['From']:
+            elif msg['From'] not in dateDict[dt] and userName not in msg['From']:
                 dateDict[dt].append(msg['From'])
                 # peers.append(msg['From'])
         else:
-            if 'choudhary.shantanu' in msg['From']:
+            if userName in msg['From']:
                 dateDict[dt] = [msg['To']]
             else:
                 dateDict[dt] = [msg['From']]
@@ -54,7 +56,7 @@ def numOfPeoplePerDay():
     savefig('chatNumbers.pdf')
 
 def digLinks(emailId):
-    # Iterating over all chat logs for extracting links.
+    # Iterating over all chat logs from emailId for links.
     from lxml import etree
     from lxml.etree import XMLSyntaxError
     from StringIO import StringIO
@@ -85,6 +87,8 @@ def digLinks(emailId):
     linkFile.close()
 
 def downloadChats(imapSession):
+    # this function download all chat conversations and store them
+    # inside subfolder named 'chats'
     try:
         imapSession.select('[Gmail]/Chats', True)
         typ, data = imapSession.search(None, 'ALL')
@@ -121,4 +125,4 @@ if __name__ == "__main__":
         print 'Failed to log in.'
     imapSession.close()
     imapSession.logout()    
-    numOfPeoplePerDay()
+    numOfPeoplePerDay(userName)
