@@ -8,21 +8,88 @@ import os
 import sys
 from lxml import etree
 
-def extract_body(payload):
+def extractBody(payload):
     if isinstance(payload,str):
         return payload
     else:
-        return '\n'.join([extract_body(part.get_payload()) for part in payload])
+        return '\n'.join([extractBody(part.get_payload()) for part in payload])
 
 def sortInt(a, b):
     return cmp(int(a), int(b))
 
+def numOfLinesPerDay(userName):
+    # histogram of number of lines of conversation per day
+    from dateutil import parser
+    import datetime
+    from pylab import plot, savefig, array, sort, xlabel, ylabel
+    from lxml import etree
+    from lxml.etree import XMLSyntaxError    
+    dateDict = {}
+    chatIds = sorted(os.listdir('chats/'), sortInt)
+    dateList = []
+    for chatId in chatIds:
+        chatData = open('chats/'+chatId).read()
+        msg = email.message_from_string(chatData)
+        payloads = [msgBlock.get_payload() for msgBlock in msg.get_payload()]
+        htmlParser = lxml.etree.HTMLParser(encoding='utf-8', recover=True)
+        dt = parser.parse(msg['date']).date()
+        if dt == datetime.date(1969, 12, 31):
+            print 'This is message from past...'
+            print msg['To'], msg['From']
+            for payload in payloads:
+                payload =  payload.replace('=\r\n','')
+                tree = etree.fromstring(payload, htmlParser)
+                for el in tree.iter():
+                    if el.tag == 'body' and el.text:
+                        print el.text
+            continue
+        if dt not in dateDict:
+            dateDict[dt] = {}
+        for payload in payloads:
+            # I don't know why google chat payload has this string =\r\n
+            # sprinkled all across the conversation
+            payload =  payload.replace('=\r\n','')
+            try:
+                tree = etree.fromstring(payload, htmlParser)
+                for el in tree.iter():
+                    if el.tag == 'message':
+                        sender = el.get('from')
+                        if userName in sender:
+                            # line sent by me
+                            if 'me' in dateDict[dt]:
+                                dateDict[dt]['me'] += 1
+                            else:
+                                dateDict[dt]['me'] = 1
+                        else:
+                            # line sent to me
+                            if sender in dateDict[dt]:
+                                dateDict[dt][sender] += 1
+                            else:
+                                dateDict[dt][sender] = 1
+                        # print el.get('to'), el.get('from')
+                    # if 'body' == el.tag and el.text:
+                        # text = el.text.replace('=\r\n', '')
+                        # print text
+            except XMLSyntaxError:
+                print "lxml can't process this block"
+        # print 'done chatId:', chatId
+    # order of keys in dictionary is not guaranteed not sure how is
+    # this working :-/
+    for item in dateDict:
+        # this is sum of lines sent to and by me
+        dateList.append((item, sum(dateDict[item].values())))
+    dateArray = array(dateList)
+    plot(dateArray[:,0], dateArray[:,1], 'o')
+    xlabel('Date')
+    ylabel('Length of conversation in number of lines')
+    savefig('NumberOfLinesPerDay.pdf')
+    
 def numOfPeoplePerDay(userName):
     # parsing all chat conversations to get number of different users
     # vs per day plot.
     from dateutil import parser
     import datetime
-    from pylab import plot, savefig, array, sort
+    from pylab import plot, savefig, array, sort, xlabel, ylabel
     dateDict = {}
     chatIds = sorted(os.listdir('chats/'), sortInt)
     dateList = []
