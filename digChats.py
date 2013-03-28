@@ -31,7 +31,7 @@ def numOfLinesPerDay(userName):
         chatData = open('chats/'+chatId).read()
         msg = email.message_from_string(chatData)
         payloads = [msgBlock.get_payload() for msgBlock in msg.get_payload()]
-        htmlParser = lxml.etree.HTMLParser(encoding='utf-8', recover=True)
+        htmlParser = etree.HTMLParser(encoding='utf-8', recover=True)
         dt = parser.parse(msg['date']).date()
         if dt == datetime.date(1969, 12, 31):
             print 'This is message from past...'
@@ -82,7 +82,7 @@ def numOfLinesPerDay(userName):
     plot(dateArray[:,0], dateArray[:,1], 'o')
     xlabel('Date')
     ylabel('Length of conversation in number of lines')
-    savefig('NumberOfLinesPerDay.pdf')
+    savefig('NumberOfLinesPerDay.png')
     
 def numOfPeoplePerDay(userName):
     # parsing all chat conversations to get number of different users
@@ -99,6 +99,7 @@ def numOfPeoplePerDay(userName):
         # we just have to count number of conversation with different
         # people on this date
         dt = parser.parse(msg['date']).date()
+        # I have no idea how I have conversation on this date
         if dt == datetime.date(1969, 12, 31):
             continue
         # print dt
@@ -113,20 +114,23 @@ def numOfPeoplePerDay(userName):
                 dateDict[dt] = [msg['To']]
             else:
                 dateDict[dt] = [msg['From']]
-    # print peers, dateDict
+    # print peers, dateDict    
+    # order of keys in dictionary is not guaranteed not sure how is
+    # this working :-/
     for item in dateDict:
         dateList.append((item, len(dateDict[item])))
     dateArray = array(dateList)
     # sortedArray = sort(dateArray, axis=0)
     # plot(sortedArray[:,0], sortedArray[:,1], 'o')
     plot(dateArray[:,0], dateArray[:,1], 'o')
-    savefig('chatNumbers.pdf')
+    xlabel('Date')
+    ylabel('Number of different peers')
+    savefig('NumperOfPeoplePerDay.png')
 
-def digLinks(emailId):
+def diggLinks(emailId):
     # Iterating over all chat logs from emailId for links.
     from lxml import etree
     from lxml.etree import XMLSyntaxError
-    from StringIO import StringIO
     from urlparse import urlparse
     chatIds = sorted(os.listdir('chats/'), sortInt)
     linkFile = open('links'+emailId+'.txt', 'w')
@@ -137,6 +141,9 @@ def digLinks(emailId):
             payloads = [msgBlock.get_payload() for msgBlock in msg.get_payload()]
             parser = lxml.etree.HTMLParser(encoding='utf-8', recover=True)
             for payload in payloads:
+                # I don't know why google chat payload has this string =\r\n
+                # sprinkled all across the conversation
+                payload =  payload.replace('=\r\n','')
                 try:
                     tree = etree.fromstring(payload, parser)
                     for el in tree.iter():
@@ -155,7 +162,9 @@ def digLinks(emailId):
 
 def downloadChats(imapSession):
     # this function download all chat conversations and store them
-    # inside subfolder named 'chats'
+    # inside subfolder named 'chats'    
+    if 'attachments' not in os.listdir('.'):
+        os.mkdir('chats')
     try:
         imapSession.select('[Gmail]/Chats', True)
         typ, data = imapSession.search(None, 'ALL')
@@ -193,3 +202,4 @@ if __name__ == "__main__":
     imapSession.close()
     imapSession.logout()    
     numOfPeoplePerDay(userName)
+    numOfLinesPerDay(userName)
