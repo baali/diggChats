@@ -163,7 +163,7 @@ def diggLinks(emailId):
 def downloadChats(imapSession):
     # this function download all chat conversations and store them
     # inside subfolder named 'chats'    
-    if 'attachments' not in os.listdir('.'):
+    if 'chats' not in os.listdir('.'):
         os.mkdir('chats')
     try:
         imapSession.select('[Gmail]/Chats', True)
