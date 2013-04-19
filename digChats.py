@@ -8,15 +8,35 @@ import os
 import sys
 from lxml import etree
 
-def extractBody(payload):
-    if isinstance(payload,str):
-        return payload
-    else:
-        return '\n'.join([extractBody(part.get_payload()) for part in payload])
-
 def sortInt(a, b):
     return cmp(int(a), int(b))
 
+def chattyHours():
+    # plot of 'busy hours' of day. But result are not correct
+    import pylab as plt
+    import numpy as np
+    chatIds = sorted(os.listdir('chats/'), sortInt)
+    hourList = []
+    freqList = []
+    for chatId in chatIds:
+        chatData = open('chats/'+chatId).read()
+        msg = email.message_from_string(chatData)
+        hour = parser.parse(msg['date']).hour
+        if str(hour) not in hourList:
+            hourList.append(str(hour))
+            freqList.append(0)
+        freqList[hourList.index(str(hour))] += 1
+    ind = np.arange(N)
+    width = 0.35
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    # are dict keys and values synced?
+    freqBars = ax.bar(ind, freqList, width, color='r')
+    plt.xticks(np.arange(len(hourList)), hourList)
+    ax.set_xlabel('Hours of day...')
+    ax.set_ylabel('Number of chat conversation during the hours...')
+    savefig('ChattyHours.png')
+        
 def numOfLinesPerDay(userName):
     # histogram of number of lines of conversation per day
     from dateutil import parser
